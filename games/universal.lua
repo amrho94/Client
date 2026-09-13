@@ -555,8 +555,17 @@ run(function()
 		entitylib.kill()
 		entitylib = nil
 	end)
-	neon:Clean(neon.Categories.Friends.Update.Event:Connect(function() entitylib.refresh() end))
-	neon:Clean(neon.Categories.Targets.Update.Event:Connect(function() entitylib.refresh() end))
+	local function connectCategoryUpdate(category)
+		local update = category and category.Update
+		local event = update and update.Event
+		if event and type(event.Connect) == 'function' then
+			neon:Clean(event:Connect(function()
+				if entitylib then entitylib.refresh() end
+			end))
+		end
+	end
+	connectCategoryUpdate(neon.Categories.Friends)
+	connectCategoryUpdate(neon.Categories.Targets)
 	neon:Clean(entitylib.Events.LocalAdded:Connect(updateVelocity))
 	neon:Clean(workspace:GetPropertyChangedSignal('CurrentCamera'):Connect(function()
 		gameCamera = workspace.CurrentCamera or workspace:FindFirstChildWhichIsA('Camera')

@@ -1203,20 +1203,9 @@ end
 
 function neon:CreateCategoryList(props)
     props=props or {};local name=props.Name or 'List'
-    local component=addMaid({Name=name,Options={},List={},ListEnabled={},ColorUpdate={Event=makeSignal()},Type='CategoryList'})
-    function component:GetValue(value)
-        for _,entry in self.List do if (type(entry)=='table'and entry.Name or entry)==value then return true end end
-        return false
-    end
-    function component:Add(value,enabled)
-        value=tostring(value or '');if value==''or self:GetValue(value)then return end
-        table.insert(self.List,{Name=value,Enabled=enabled~=false});if enabled~=false then table.insert(self.ListEnabled,value)end
-    end
-    function component:Remove(value)
-        for i=#self.List,1,-1 do local e=self.List[i];if(type(e)=='table'and e.Name or e)==value then table.remove(self.List,i)end end
-        local i=table.find(self.ListEnabled,value);if i then table.remove(self.ListEnabled,i)end
-    end
-    function component:ChangeValue() end
+    local component=addMaid({Name=name,Options={},List={},ListEnabled={},Update={Event=makeSignal()},ColorUpdate={Event=makeSignal()},Type='CategoryList'})
+    component:Clean(component.Update.Event)
+    component:Clean(component.ColorUpdate.Event)
     function component:CreateToggle(p)local dummy={Options=self.Options,OptionOrder={}};local c=settingConstructors.Toggle(dummy,p);self.Options[p.Name]=c;return c end
     function component:CreateColorSlider(p)local dummy={Options=self.Options,OptionOrder={}};local c=settingConstructors.ColorSlider(dummy,p);self.Options[p.Name]=c;return c end
     local hostCategory=(name=='Friends'or name=='Targets')and'Player'or'Utility'
@@ -1224,10 +1213,54 @@ function neon:CreateCategoryList(props)
     component.Module=module
     function component:CreateToggle(p)local c=module:CreateToggle(p);self.Options[p.Name]=c;return c end
     function component:CreateColorSlider(p)local c=module:CreateColorSlider(p);self.Options[p.Name]=c;return c end
-    local listOption=module:CreateTextList({Name=name,Placeholder=props.Placeholder or 'add entry',Default={}})
-    component.List=listOption.List;component.ListEnabled=listOption.ListEnabled
-    local rawAdd=listOption.Add
-    function listOption:Add(value)rawAdd(self,value);component.List=self.List;component.ListEnabled=self.ListEnabled end
+
+    local listOption
+    local function syncList()
+        if not listOption then return end
+        component.List=listOption.List
+        component.ListEnabled=listOption.ListEnabled
+    end
+    local function listUpdated()
+        syncList()
+        component.Update.Event:Fire(component.ListEnabled)
+    end
+
+    listOption=module:CreateTextList({
+        Name=name,
+        Placeholder=props.Placeholder or 'add entry',
+        Default={},
+        Function=listUpdated
+    })
+    component.ListOption=listOption
+    syncList()
+
+    function component:GetValue(value)
+        return listOption:GetValue(value)
+    end
+    function component:Add(value,enabled)
+        value=tostring(value or ''):match('^%s*(.-)%s*$')
+        if value==''or table.find(listOption.List,value)then return end
+        if enabled==false then
+            table.insert(listOption.List,value)
+            listOption:ChangeValue()
+        else
+            listOption:Add(value)
+        end
+        syncList()
+    end
+    function component:Remove(value)
+        listOption:Remove(value)
+        syncList()
+    end
+    function component:Change(value)
+        listOption:Change(value)
+        syncList()
+    end
+    function component:ChangeValue()
+        listOption:ChangeValue()
+        syncList()
+    end
+
     neon.Categories[name]=component
     return component
 end
