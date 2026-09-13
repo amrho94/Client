@@ -1,0 +1,11 @@
+{
+  "name": "Neon",
+  "version": "1.1.0",
+  "build": "neon-krs-r2",
+  "repository": "expectedbadthings/TenacityForRoblox",
+  "branch": "main",
+  "entrypoint": "loader.lua",
+  "cacheRoot": "neon/",
+  "apiVersion": 3,
+  "categories": ["Offense", "Motion", "Player", "World", "Vision", "Utility", "Scripts", "Developer"]
+}
