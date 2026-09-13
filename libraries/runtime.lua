@@ -44,25 +44,45 @@ function runtime.Read(path, callback, optional)
     else
         pending[path] = true
         local ok, result = pcall(function()
-            if not refresh then
+            local function readDisk()
                 local diskOK, cached = pcall(readfile, path)
-                if diskOK and valid(cached, path) then runtime.Stats.DiskHits += 1; return cached end
+                if diskOK and valid(cached, path) then
+                    runtime.Stats.DiskHits += 1
+                    return cached
+                end
             end
+
+            if not refresh then
+                local cached = readDisk()
+                if cached then return cached end
+            end
+
             local fetched, body = pcall(game.HttpGet, game, remoteBase()..remotePath(path), true)
             runtime.Stats.Downloads += 1
-            if fetched and type(body) == 'string' and body:lower():match('^%s*404: not found%s*$') and optional then
-                missing[path] = true; return nil
+            if fetched and valid(body, path) then
+                pcall(writefile, path, body)
+                return body
             end
-            if not fetched or not valid(body, path) then
-                error('Failed to fetch '..path..': '..tostring(body), 0)
+
+            -- A refresh should never make a working local install unusable just because
+            -- GitHub/executor HTTP failed. Use the last valid disk copy as stale fallback.
+            local cached = readDisk()
+            if cached then return cached end
+
+            -- Optional files (such as games/<PlaceId>.lua) are genuinely optional.
+            -- Executors report missing raw GitHub files inconsistently: false+blank,
+            -- thrown 404s, or a literal "404: Not Found" body. Treat all as absent.
+            if optional then
+                missing[path] = true
+                return nil
             end
-            pcall(writefile, path, body)
-            return body
+
+            error('Failed to fetch '..path..': '..tostring(body), 0)
         end)
         pending[path] = nil
         if not ok then error(result, 2) end
         data = result
-        sources[path] = data
+        if data ~= nil then sources[path] = data end
     end
 
     if data == nil then return nil end

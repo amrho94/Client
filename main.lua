@@ -107,8 +107,14 @@ if not shared.NeonIndependent then
     compile(read('neon/games/universal.lua'),'@neon/games/universal.lua')()
     local gamePath='neon/games/'..game.PlaceId..'.lua'
     if not shared.NeonDeveloper or isfile(gamePath) then
-        local source=read(gamePath,nil,true)
-        if source then compile(source,'@'..gamePath)(...) end
+        local ok,source=pcall(read,gamePath,nil,true)
+        if ok and source then
+            compile(source,'@'..gamePath)(...)
+        elseif not ok then
+            -- Per-place files are optional. Universal should still boot if one is absent
+            -- or a host/executor reports a 404 as a failed request instead of a body.
+            warn('[Neon] No game integration for '..tostring(game.PlaceId)..'; using Universal.')
+        end
     end
     finish()
 else

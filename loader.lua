@@ -22,21 +22,44 @@ local function boot()
         'neon/libraries', 'neon/profiles', 'neon/additions', 'neon/additions/configs'
     }) do pcall(makefolder, path) end
 
-    local cacheRevision='neon-krs-r1-amrho94-client'
+    local cacheRevision='neon-krs-r2-hot-reload'
     local marker='neon/profiles/cache-revision.txt'
     local markerOK,current=pcall(readfile,marker)
     local refreshForRevision=not markerOK or current~=cacheRevision
     if refreshForRevision and not shared.NeonDeveloper then shared.NeonRefresh=true end
 
     local runtimePath='neon/libraries/runtime.lua'
-    local cached, source=pcall(readfile,runtimePath)
-    local chunk=cached and type(source)=='string' and loadstring(source,'@'..runtimePath)
+    local cachedOK,cachedSource=pcall(readfile,runtimePath)
+    local cachedChunk=cachedOK and type(cachedSource)=='string' and loadstring(cachedSource,'@'..runtimePath)
+    local source,chunk
+
+    -- Runtime owns all later cache behavior, so refresh it too when this is a real reload.
+    -- If GitHub/network is unavailable, keep the last valid local runtime instead of bricking Neon.
+    if (hotReload or refreshForRevision or shared.NeonRefresh==true) and not shared.NeonDeveloper then
+        local repo=shared.NeonRepository or 'amrho94/Client'
+        local branch=shared.NeonBranch or 'main'
+        local fetched,body=pcall(game.HttpGet,game,('https://raw.githubusercontent.com/%s/%s/libraries/runtime.lua'):format(repo,branch),true)
+        if fetched and type(body)=='string' and #body>0 then
+            local remoteChunk=loadstring(body,'@'..runtimePath)
+            if remoteChunk then
+                source=body
+                chunk=remoteChunk
+                pcall(writefile,runtimePath,body)
+            end
+        end
+    end
+
+    if not chunk then
+        source=cachedSource
+        chunk=cachedChunk
+    end
+
     if not chunk then
         local repo=shared.NeonRepository or 'amrho94/Client'
         local branch=shared.NeonBranch or 'main'
         source=game:HttpGet(('https://raw.githubusercontent.com/%s/%s/libraries/runtime.lua'):format(repo,branch),true)
         chunk=assert(loadstring(source,'@'..runtimePath))
-        writefile(runtimePath,source)
+        pcall(writefile,runtimePath,source)
     end
 
     local runtime=chunk()
