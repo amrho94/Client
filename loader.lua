@@ -1,6 +1,7 @@
 -- Set NeonRepository and NeonBranch before loading to use a fork.
 if shared.NeonBooting then return end
 shared.NeonBooting = true
+shared.NeonRepository = shared.NeonRepository or 'amrho94/Client'
 
 local previous = shared.Neon
 local function boot()
@@ -12,7 +13,7 @@ local function boot()
         'neon/libraries', 'neon/profiles', 'neon/additions', 'neon/additions/configs'
     }) do pcall(makefolder, path) end
 
-    local cacheRevision='neon-krs-r1'
+    local cacheRevision='neon-krs-r1-amrho94-client'
     local marker='neon/profiles/cache-revision.txt'
     local markerOK,current=pcall(readfile,marker)
     local refreshForRevision=not markerOK or current~=cacheRevision
@@ -22,7 +23,7 @@ local function boot()
     local cached, source=pcall(readfile,runtimePath)
     local chunk=cached and type(source)=='string' and loadstring(source,'@'..runtimePath)
     if not chunk then
-        local repo=shared.NeonRepository or 'expectedbadthings/TenacityForRoblox'
+        local repo=shared.NeonRepository or 'amrho94/Client'
         local branch=shared.NeonBranch or 'main'
         source=game:HttpGet(('https://raw.githubusercontent.com/%s/%s/libraries/runtime.lua'):format(repo,branch),true)
         chunk=assert(loadstring(source,'@'..runtimePath))

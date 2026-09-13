@@ -11,7 +11,7 @@ local isfile = isfile or function(file)
 	end)
 	return suc and res ~= nil and res ~= ''
 end
-local REPO_RAW = ('https://raw.githubusercontent.com/%s/%s/'):format(shared.NeonRepository or 'expectedbadthings/TenacityForRoblox', shared.NeonBranch or 'main')
+local REPO_RAW = ('https://raw.githubusercontent.com/%s/%s/'):format(shared.NeonRepository or 'amrho94/Client', shared.NeonBranch or 'main')
 
 local function invalidDownload(data, path)
 	if type(data) ~= 'string' or data == '' then return true end

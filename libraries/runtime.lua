@@ -1,7 +1,7 @@
 -- Local paths start with neon/; repository paths do not.
 local runtime = {
     Name = 'NeonRuntime',
-    Repo = shared.NeonRepository or 'expectedbadthings/TenacityForRoblox',
+    Repo = shared.NeonRepository or 'amrho94/Client',
     Branch = shared.NeonBranch or 'main',
     Root = 'neon/',
     Stats = {Downloads = 0, DiskHits = 0, MemoryHits = 0}

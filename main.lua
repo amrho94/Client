@@ -83,11 +83,12 @@ local function finish()
             if ok then
                 assert(loadstring(source,'@neon/loader.lua'))()
             else
-                local repo=shared.NeonRepository or 'expectedbadthings/TenacityForRoblox'
+                local repo=shared.NeonRepository or 'amrho94/Client'
                 local branch=shared.NeonBranch or 'main'
                 assert(loadstring(game:HttpGet(('https://raw.githubusercontent.com/%s/%s/loader.lua'):format(repo,branch),true),'@Neon/loader.lua'))()
             end
         ]]
+        teleportScript='shared.NeonRepository='..string.format('%q',runtime.Repo)..'\nshared.NeonBranch='..string.format('%q',runtime.Branch)..'\n'..teleportScript
         if shared.NeonDeveloper then teleportScript='shared.NeonDeveloper=true\n'..teleportScript end
         if shared.NeonCustomProfile then teleportScript='shared.NeonCustomProfile='..string.format('%q',shared.NeonCustomProfile)..'\n'..teleportScript end
         queue_on_teleport(teleportScript)

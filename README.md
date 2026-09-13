@@ -5,7 +5,7 @@ Roblox client based on TenacityForRoblox, with a Krs-inspired UI. Written in Lua
 ## Runtime
 
 ```lua
-loadstring(game:HttpGet('https://raw.githubusercontent.com/expectedbadthings/TenacityForRoblox/main/loader.lua', true))()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/amrho94/Client/main/loader.lua', true))()
 ```
 
 The loader uses the repository shown above. Set `shared.NeonRepository` and `shared.NeonBranch` before loading to use your own fork. The ZIP changes need to be uploaded there before the remote loader can use them.

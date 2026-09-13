@@ -15,7 +15,7 @@ local function downloadFile(path, func)
 	if shared.NeonRuntime then return shared.NeonRuntime.Read(path, func) end
 	if not isfile(path) then
 		local suc, res = pcall(function()
-			local repo=shared.NeonRepository or 'expectedbadthings/TenacityForRoblox';local branch=shared.NeonBranch or readfile('neon/profiles/commit.txt');return game:HttpGet(('https://raw.githubusercontent.com/%s/%s/%s'):format(repo,branch,select(1,path:gsub('neon/',''))),true)
+			local repo=shared.NeonRepository or 'amrho94/Client';local branch=shared.NeonBranch or readfile('neon/profiles/commit.txt');return game:HttpGet(('https://raw.githubusercontent.com/%s/%s/%s'):format(repo,branch,select(1,path:gsub('neon/',''))),true)
 		end)
 		if not suc or res == '404: Not Found' then
 			error(res)
