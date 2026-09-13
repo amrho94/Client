@@ -23,6 +23,8 @@ local runtime=shared.NeonRuntime
 if not runtime then
     runtime=assert(compile(readfile('neon/libraries/runtime.lua'),'@neon/libraries/runtime.lua'))()
     shared.NeonRuntime=runtime
+elseif previous and type(runtime.ClearMemoryCache)=='function' then
+    pcall(runtime.ClearMemoryCache)
 end
 local read=runtime.Read
 

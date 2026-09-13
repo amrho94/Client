@@ -4,6 +4,15 @@ shared.NeonBooting = true
 shared.NeonRepository = shared.NeonRepository or 'amrho94/Client'
 
 local previous = shared.Neon
+local hotReload = shared.NeonSessionBooted == true or previous ~= nil
+shared.NeonSessionBooted = true
+
+if hotReload then
+    shared.NeonReload = true
+    if not shared.NeonDeveloper then
+        shared.NeonRefresh = true
+    end
+end
 local function boot()
     assert(type(readfile)=='function' and type(writefile)=='function' and type(makefolder)=='function',
         'Neon requires executor filesystem support.')

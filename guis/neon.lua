@@ -358,6 +358,23 @@ function neon:StyleHUDCard(object)
     return object
 end
 
+do
+    local roots = {}
+    local playerGui = lplr and lplr:FindFirstChildOfClass('PlayerGui')
+    if playerGui then roots[#roots + 1] = playerGui end
+    local ok, hidden = pcall(function() return gethui and gethui() end)
+    if ok and hidden and hidden ~= playerGui then roots[#roots + 1] = hidden end
+    for _, root in roots do
+        for _, child in root:GetChildren() do
+            if child.Name == 'Neon' then pcall(child.Destroy, child) end
+        end
+    end
+    for _, name in {'NeonUIBlur'} do
+        local old = lightingService:FindFirstChild(name)
+        if old then pcall(old.Destroy, old) end
+    end
+end
+
 local screen = create('ScreenGui', nil, {
     Name = 'Neon', DisplayOrder = 9999999, IgnoreGuiInset = true,
     ZIndexBehavior = Enum.ZIndexBehavior.Global
@@ -719,8 +736,8 @@ settingConstructors.Slider = function(module, props)
         component:SetValue(min+(max-min)*p)
     end
     bar.MouseButton1Down:Connect(function(x,y) dragging=true; update(Vector2.new(x,y)) end)
-    inputService.InputChanged:Connect(function(input) if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then update(input.Position) end end)
-    inputService.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end end)
+    neon:Clean(inputService.InputChanged:Connect(function(input) if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then update(input.Position) end end))
+    neon:Clean(inputService.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end end))
     render()
     return component
 end
@@ -763,8 +780,8 @@ settingConstructors.TwoSlider = function(module, props)
         if math.abs(v-component.ValueMin)<=math.abs(v-component.ValueMax) then component:SetValue(v,component.ValueMax) else component:SetValue(component.ValueMin,v) end
     end
     bar.MouseButton1Down:Connect(function(x,y) dragging=true; update(Vector2.new(x,y)) end)
-    inputService.InputChanged:Connect(function(input) if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then update(input.Position) end end)
-    inputService.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end end)
+    neon:Clean(inputService.InputChanged:Connect(function(input) if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then update(input.Position) end end))
+    neon:Clean(inputService.InputEnded:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end end))
     render(); return component
 end
 
@@ -888,8 +905,8 @@ settingConstructors.ColorSlider = function(module,props)
     local function updateAlpha(pos) component:SetValue(component.Hue,component.Sat,component.Value,math.clamp((pos.X-alpha.AbsolutePosition.X)/math.max(alpha.AbsoluteSize.X,1),0,1)) end
     huebar.MouseButton1Down:Connect(function(x,y)dragHue=true;updateHue(Vector2.new(x,y))end)
     alpha.MouseButton1Down:Connect(function(x,y)dragAlpha=true;updateAlpha(Vector2.new(x,y))end)
-    inputService.InputChanged:Connect(function(i)if i.UserInputType==Enum.UserInputType.MouseMovement then if dragHue then updateHue(i.Position) elseif dragAlpha then updateAlpha(i.Position) end end end)
-    inputService.InputEnded:Connect(function(i)if i.UserInputType==Enum.UserInputType.MouseButton1 then dragHue=false;dragAlpha=false end end)
+    neon:Clean(inputService.InputChanged:Connect(function(i)if i.UserInputType==Enum.UserInputType.MouseMovement then if dragHue then updateHue(i.Position) elseif dragAlpha then updateAlpha(i.Position) end end end))
+    neon:Clean(inputService.InputEnded:Connect(function(i)if i.UserInputType==Enum.UserInputType.MouseButton1 then dragHue=false;dragAlpha=false end end))
     render();return component
 end
 
@@ -1098,7 +1115,7 @@ function neon:_CreateModule(categoryName,props)
     function module:SetVisible(value)
         self.Visible=value==true;self.Row.Visible=self.Visible;neon.ModuleSchemaRevision+=1;neon:RefreshModuleVisibility()
     end
-    function module:Toggle(multiple)
+    function module:Toggle(multiple, synchronous)
         self.Enabled=not self.Enabled
         neon.ModuleVisualRevision+=1
         if self.Children then self.Children.Visible=self.Enabled end
@@ -1106,7 +1123,12 @@ function neon:_CreateModule(categoryName,props)
         moduleRowVisual(self,false)
         neon:UpdateTextGUI()
         if neon.Loaded then neon:RecordRecent(self.Id) end
-        task.spawn(self.Function,self.Enabled)
+        if synchronous then
+            local ok, err = pcall(self.Function, self.Enabled)
+            if not ok then warn('[Neon] '..self.Id..' cleanup failed: '..tostring(err)) end
+        else
+            task.spawn(self.Function,self.Enabled)
+        end
         return self.Enabled
     end
     function module:Save(data)
@@ -1343,8 +1365,8 @@ function neon:CreateOverlay(props)
     setmetatable(overlay,{__index=function(_,k)return module[k]end})
     local dragging=false;local dragOrigin;local startPos
     headerBar.InputBegan:Connect(function(input)if input.UserInputType==Enum.UserInputType.MouseButton1 and clickgui.Visible then dragging=true;dragOrigin=input.Position;startPos=container.Position end end)
-    inputService.InputChanged:Connect(function(input)if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then local d=input.Position-dragOrigin;container.Position=startPos+UDim2.fromOffset(d.X,d.Y)end end)
-    inputService.InputEnded:Connect(function(input)if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end end)
+    neon:Clean(inputService.InputChanged:Connect(function(input)if dragging and input.UserInputType==Enum.UserInputType.MouseMovement then local d=input.Position-dragOrigin;container.Position=startPos+UDim2.fromOffset(d.X,d.Y)end end))
+    neon:Clean(inputService.InputEnded:Connect(function(input)if input.UserInputType==Enum.UserInputType.MouseButton1 then dragging=false end end))
     self.OverlayRegistry[name]=overlay
     return overlay
 end
@@ -1470,15 +1492,23 @@ end
 function neon:UndoBulkDisable()end
 
 function neon:Uninject()
-    if self.Loaded==nil then return end
-    pcall(self.Save,self)
+    if self.Uninjected then return end
+    self.Uninjected=true
+    if self.Loaded then pcall(self.Save,self) end
     self.Loaded=nil
     local seen={}
-    for _,module in self.Modules do if type(module)=='table'and module.Id and not seen[module]then seen[module]=true;if module.Enabled then pcall(module.Toggle,module,true)end;module:ClearConnections()end end
+    for _,module in self.Modules do
+        if type(module)=='table'and module.Id and not seen[module]then
+            seen[module]=true
+            if module.Enabled then pcall(module.Toggle,module,true,true)end
+            module:ClearConnections()
+        end
+    end
     for i=#self.Connections,1,-1 do dispose(self.Connections[i]);self.Connections[i]=nil end
     if blurEffect and blurEffect.Parent then pcall(function()blurEffect:Destroy()end)end
     if screen and screen.Parent then pcall(function()screen:Destroy()end)end
     if shared.Neon==self then shared.Neon=nil end
+    if shared.NeonAPI==self.API then shared.NeonAPI=nil end
     shared.NeonBuild=nil
 end
 

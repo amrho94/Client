@@ -4,6 +4,21 @@ local Lighting=game:GetService('Lighting')
 local RunService=game:GetService('RunService')
 local player=Players.LocalPlayer
 
+do
+    local roots = {}
+    local playerGui = player and player:FindFirstChildOfClass('PlayerGui')
+    if playerGui then roots[#roots + 1] = playerGui end
+    local ok, hidden = pcall(function() return gethui and gethui() end)
+    if ok and hidden and hidden ~= playerGui then roots[#roots + 1] = hidden end
+    for _, root in roots do
+        for _, child in root:GetChildren() do
+            if child.Name == 'NeonLoading' then pcall(child.Destroy, child) end
+        end
+    end
+    local oldBlur = Lighting:FindFirstChild('NeonStartupBlur')
+    if oldBlur then pcall(oldBlur.Destroy, oldBlur) end
+end
+
 local function make(class,parent,props)
     local obj=Instance.new(class)
     for key,value in props or{}do pcall(function()obj[key]=value end)end
